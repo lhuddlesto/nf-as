@@ -1,13 +1,15 @@
 const AWS = require('aws-sdk');
 
-const s3 = new AWS.S3({apiVersion: '2006-03-01'});
-const params = {
-    Bucket: 'nf.music'
-}
+const getMasterUrl = (track) => {
+  const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
+  const params = {
+    Bucket: 'nf.music',
+    Key: `${track}/Master/${track}.wav`,
+  };
 
-s3.getBucketVersioning(params, (err, data) => {
-    if (err) {
-        return console.log(err.stack)
-    }
-    console.log(data);
-});
+  return s3.getSignedUrl('getObject', params);
+};
+
+module.exports = {
+  getMasterUrl,
+};
