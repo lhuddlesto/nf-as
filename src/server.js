@@ -1,5 +1,6 @@
 const express = require('express');
-const { getMasterUrl } = require('./aws_example');
+const { getMasterUrl } = require('./utils/s3/s3_get');
+const { uploadFile } = require('./utils/s3/s3_put');
 
 const app = express();
 
@@ -7,12 +8,21 @@ app.get('/', (req, res) => {
   res.send('Hello world');
 });
 
-app.get('/track/:id', async (req, res) => {
-  const { id } = req.params;
-  const track = await getMasterUrl(id);
-  res.send({
-    track,
+app.get('/track/:id', (req, res) => {
+  let { id } = req.params;
+  id = id.replace(/\s/g, '_').toLowerCase();
+  const url = getMasterUrl(id);
+  return res.send({
+    url,
     id,
+  });
+});
+
+app.post('/upload', async (req, res) => {
+  const message = await uploadFile();
+  res.send({
+    hi: 'hi',
+    message,
   });
 });
 
