@@ -1,7 +1,10 @@
 const express = require('express');
+const multer = require('multer');
+
 const { getMasterUrl } = require('../utils/s3/s3_get');
 const { uploadFile } = require('../utils/s3/s3_put');
 
+const upload = multer({ dest: './tmp/tracks' });
 const router = new express.Router();
 
 router.get('/music/track/:id', (req, res) => {
@@ -20,6 +23,17 @@ router.post('/music/upload', async (req, res) => {
     res.send({
       hi: 'hi',
       message,
+    });
+  } catch (e) {
+    res.status(500).send(e);
+  }
+});
+
+router.post('/forumtest', upload.single('track'), (req, res) => {
+  try {
+    console.log({
+      body: req.body.toString(),
+      file: req.file,
     });
   } catch (e) {
     res.status(500).send(e);
