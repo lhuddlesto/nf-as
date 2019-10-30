@@ -17,19 +17,7 @@ router.get('/music/track/:id', (req, res) => {
   });
 });
 
-router.post('/music/upload', async (req, res) => {
-  try {
-    const message = await uploadFile();
-    res.send({
-      hi: 'hi',
-      message,
-    });
-  } catch (e) {
-    res.status(500).send(e);
-  }
-});
-
-router.post('/forumtest', upload.single('track'), async (req, res) => {
+router.post('/music/upload', upload.single('track'), async (req, res) => {
   try {
     res.send({
       status: 'success',
