@@ -29,14 +29,19 @@ router.post('/music/upload', async (req, res) => {
   }
 });
 
-router.post('/forumtest', upload.single('track'), (req, res) => {
+router.post('/forumtest', upload.single('track'), async (req, res) => {
   try {
-    console.log({
-      body: req.body.toString(),
-      file: req.file,
+    res.send({
+      status: 'success',
+      message: 'Track uploaded successfully',
     });
   } catch (e) {
-    res.status(500).send(e);
+    console.log(e);
+    res.status(500).send({
+      status: 'error',
+      message: 'Sorry, we were unable to upload your track.',
+      error: e,
+    });
   }
 });
 
