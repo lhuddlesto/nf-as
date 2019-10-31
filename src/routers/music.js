@@ -4,7 +4,14 @@ const multer = require('multer');
 const { getMasterUrl } = require('../utils/s3/s3_get');
 const { uploadFile } = require('../utils/s3/s3_put');
 
-const upload = multer({ dest: './tmp/tracks' });
+
+const storage = multer.diskStorage({
+  destination: './tmp/tracks',
+  filename: (req, file, cb) => {
+    cb(null, file.originalname);
+  },
+});
+const upload = multer({ storage });
 const router = new express.Router();
 
 router.get('/music/track/:id', (req, res) => {
@@ -19,13 +26,14 @@ router.get('/music/track/:id', (req, res) => {
 
 router.post('/music/upload', upload.single('track'), async (req, res) => {
   try {
+    console.log(req.body, req.file);
     res.send({
       status: 'success',
       message: 'Track uploaded successfully',
     });
   } catch (e) {
     console.log(e);
-    res.status(500).send({
+    res.send({
       status: 'error',
       message: 'Sorry, we were unable to upload your track.',
       error: e,
