@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const musicRouter = require('./routers/music');
+require('./db/mongoose');
 
 const app = express();
 
