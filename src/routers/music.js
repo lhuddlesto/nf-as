@@ -20,19 +20,18 @@ router.post('/music/upload', upload.single('track'), async (req, res) => {
   const price = Number(req.body.price) - 0.01;
   const bpm = Number(req.body.bpm);
 
-  const music = new Music({
-    trackTitle,
-    genre,
-    isPublic,
-    mood,
-    price,
-    bpm,
-  });
-
   try {
+    const trackUrl = await uploadFile(req.file.path, trackTitle);
+    const music = new Music({
+      trackTitle,
+      genre,
+      isPublic,
+      mood,
+      price,
+      bpm,
+      trackUrl,
+    });
     await music.save();
-    const location = await uploadFile(req.file.path, trackTitle);
-    console.log(location);
     await res.status(201).send({
       status: 'success',
       message: 'Your track was uploaded successfully.',

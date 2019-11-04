@@ -35,8 +35,12 @@ const musicSchema = new mongoose.Schema({
         throw new Error('BPM must be greater than 0');
       }
     },
-
   },
+  trackUrl: {
+    type: String,
+    required: true,
+  },
+
 }, {
   timestamps: true,
 });
