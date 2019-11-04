@@ -1,10 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const Music = require('../models/music');
-
-const { getMasterUrl } = require('../s3/s3_get');
 const { uploadFile } = require('../s3/s3_put');
-
 
 const storage = multer.diskStorage({
   destination: './tmp/tracks',
@@ -12,36 +9,33 @@ const storage = multer.diskStorage({
     cb(null, file.originalname.replace(/ /g, '_').toLowerCase());
   },
 });
+
 const upload = multer({ storage });
 
 const router = new express.Router();
 
-router.get('/music/track/:id', (req, res) => {
-  let { id } = req.params;
-  id = id.replace(/\s/g, '_').toLowerCase();
-  const url = getMasterUrl(id);
-  return res.send({
-    url,
-    id,
-  });
-});
-
 router.post('/music/upload', upload.single('track'), async (req, res) => {
   const { trackTitle, genre, isPublic } = req.body;
   const mood = req.body.mood.split(',');
+  const price = Number(req.body.price) - 0.01;
+  const bpm = Number(req.body.bpm);
 
   const music = new Music({
     trackTitle,
     genre,
     isPublic,
     mood,
+    price,
+    bpm,
   });
 
   try {
     await music.save();
+    const location = await uploadFile(req.file.path, trackTitle);
+    console.log(location);
     await res.status(201).send({
       status: 'success',
-      message: 'Track uploaded successfully',
+      message: 'Your track was uploaded successfully.',
     });
     console.log('success');
   } catch (e) {
