@@ -15,6 +15,13 @@ const upload = multer({ storage });
 
 const router = new express.Router();
 
+// Grab tracks
+router.get('/music', async (req, res) => {
+  const music = await Music.find({});
+  res.send(music);
+});
+
+// Upload a single master track with cover art
 router.post('/music/upload', upload.fields([{ name: 'track', maxCount: 1 }, { name: 'cover', maxCount: 1 }]), async (req, res) => {
   const { trackTitle, genre, isPublic } = req.body;
   const mood = req.body.mood.split(',');
