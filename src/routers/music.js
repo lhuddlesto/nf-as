@@ -1,7 +1,8 @@
 const express = require('express');
 const multer = require('multer');
+const sharp = require('sharp');
 const Music = require('../models/music');
-const { uploadFile } = require('../s3/s3_put');
+const { uploadTrack, uploadCover } = require('../s3/s3_put');
 
 const storage = multer.diskStorage({
   destination: './tmp/tracks',
@@ -14,14 +15,17 @@ const upload = multer({ storage });
 
 const router = new express.Router();
 
-router.post('/music/upload', upload.single('track'), async (req, res) => {
+router.post('/music/upload', upload.fields([{ name: 'track', maxCount: 1 }, { name: 'cover', maxCount: 1 }]), async (req, res) => {
   const { trackTitle, genre, isPublic } = req.body;
   const mood = req.body.mood.split(',');
   const price = Number(req.body.price) - 0.01;
   const bpm = Number(req.body.bpm);
 
   try {
-    const trackUrl = await uploadFile(req.file.path, trackTitle);
+    // eslint-disable-next-line dot-notation
+    const imageUrl = await uploadCover(req.files['cover'][0].path, trackTitle);
+    // eslint-disable-next-line dot-notation
+    const trackUrl = await uploadTrack(req.files['track'][0].path, trackTitle);
     const music = new Music({
       trackTitle,
       genre,
@@ -30,6 +34,7 @@ router.post('/music/upload', upload.single('track'), async (req, res) => {
       price,
       bpm,
       trackUrl,
+      imageUrl,
     });
     await music.save();
     await res.status(201).send({
