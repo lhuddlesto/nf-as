@@ -21,6 +21,22 @@ router.get('/music', async (req, res) => {
   res.send(music);
 });
 
+router.get('/music/search', async (req, res) => {
+  if (!req.query) {
+    res.status(404).send({
+      error: 'Track not found.',
+    });
+  }
+  console.log(req.query.track);
+  try {
+    const trackTitle = req.query.track;
+    const matchingTracks = await Music.findOne({ trackTitle });
+    res.status(201).send(matchingTracks);
+  } catch (e) {
+    res.status(500).send(e);
+  }
+});
+
 // Upload a single master track with cover art
 router.post('/music/upload', upload.fields([{ name: 'track', maxCount: 1 }, { name: 'cover', maxCount: 1 }]), async (req, res) => {
   const { trackTitle, genre, isPublic } = req.body;
