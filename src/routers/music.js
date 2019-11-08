@@ -15,12 +15,13 @@ const upload = multer({ storage });
 
 const router = new express.Router();
 
-// Grab tracks
+// Grab all tracks
 router.get('/music', async (req, res) => {
   const music = await Music.find({});
   res.send(music);
 });
 
+// Search for a track, returns one result
 router.get('/music/search', async (req, res) => {
   if (!req.query) {
     res.status(404).send({
@@ -30,7 +31,14 @@ router.get('/music/search', async (req, res) => {
   console.log(req.query.track);
   try {
     const trackTitle = req.query.track;
-    const matchingTracks = await Music.findOne({ trackTitle });
+    const matchingTracks = await Music.find({
+      $text: {
+        $search: trackTitle,
+        $caseSensitive: false,
+        $diacriticSensitive: false,
+      },
+    });
+
     res.status(201).send(matchingTracks);
   } catch (e) {
     res.status(500).send(e);
@@ -39,7 +47,8 @@ router.get('/music/search', async (req, res) => {
 
 // Upload a single master track with cover art
 router.post('/music/upload', upload.fields([{ name: 'track', maxCount: 1 }, { name: 'cover', maxCount: 1 }]), async (req, res) => {
-  const { trackTitle, genre, isPublic } = req.body;
+  const { genre, isPublic } = req.body;
+  const trackTitle = req.body.trackTitle.replace(/ /g, '_').toLowerCase();
   const mood = req.body.mood.split(',');
   const price = Number(req.body.price) - 0.01;
   const bpm = Number(req.body.bpm);

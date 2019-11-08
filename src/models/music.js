@@ -48,6 +48,18 @@ const musicSchema = new mongoose.Schema({
   timestamps: true,
 });
 
+musicSchema.index({
+  trackTitle: 'text',
+  genre: 'text',
+  mood: 'text',
+}, {
+  weights: {
+    trackTitle: 10,
+    mood: 7,
+    genre: 4,
+  },
+});
+
 const Music = mongoose.model('Music', musicSchema);
 
 module.exports = Music;
