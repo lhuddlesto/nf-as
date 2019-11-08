@@ -28,17 +28,16 @@ router.get('/music/search', async (req, res) => {
       error: 'Track not found.',
     });
   }
-  console.log(req.query.track);
   try {
-    const trackTitle = req.query.track;
+    const searchTerm = req.query.term;
     const matchingTracks = await Music.find({
       $text: {
-        $search: trackTitle,
+        $search: searchTerm,
         $caseSensitive: false,
         $diacriticSensitive: false,
       },
     });
-
+    console.log(matchingTracks);
     res.status(201).send(matchingTracks);
   } catch (e) {
     res.status(500).send(e);
@@ -81,6 +80,49 @@ router.post('/music/upload', upload.fields([{ name: 'track', maxCount: 1 }, { na
       message: 'Sorry, we were unable to upload your track.',
       error: e,
     });
+  }
+});
+
+// Update a track
+router.patch('/music/', async (req, res) => {
+  const updates = Object.keys(req.body)
+  const allowedUpdates = ['mood', 'isPublic', 'price', 'trackTitle', 'genre', 'bpm'];
+  const isValidOperation = updates.every((update) => allowedUpdates.includes(update))
+
+  if (!isValidOperation) {
+    return res.status(400).send({ error: 'Invalid updates' });
+  }
+
+  try {
+    const track = await Music.findOne({ trackTitle: req.query.trackTitle });
+
+    if (!track) {
+      return res.status(404).send();
+    }
+
+    updates.forEach((update) => {
+      track[update] = req.body[update];
+    });
+
+    await track.save();
+
+    res.send(track);
+  } catch (e) {
+    res.status(400).send(e);
+  }
+});
+
+// Delete a track
+router.delete('/music/', async (req, res) => {
+  try {
+    const track = await Music.findOneAndDelete({ trackTitle: req.query.trackTitle });
+
+    if (!track) {
+      return res.status(404).send();
+    }
+    res.send(track);
+  } catch (e) {
+    res.status(400).send(e);
   }
 });
 
