@@ -14,6 +14,10 @@ const musicSchema = new mongoose.Schema({
     type: Array,
     required: true,
   },
+  similarArtists: {
+    type: Array,
+    required: true,
+  },
   isPublic: {
     type: String,
     default: false,
@@ -52,11 +56,13 @@ musicSchema.index({
   trackTitle: 'text',
   genre: 'text',
   mood: 'text',
+  similarArtists: 'text',
 }, {
   weights: {
     trackTitle: 10,
+    similarArtists: 8,
     mood: 7,
-    genre: 4,
+    genre: 6,
   },
 });
 
