@@ -3,6 +3,7 @@ const multer = require('multer');
 const sharp = require('sharp');
 const Music = require('../models/music');
 const { uploadTrack, uploadCover } = require('../s3/s3_put');
+const deleteTrack = require('../s3/s3_delete');
 
 const storage = multer.diskStorage({
   destination: './tmp/tracks',
@@ -106,7 +107,7 @@ router.patch('/music/', async (req, res) => {
 
     await track.save();
 
-    res.send(track);
+    return res.send(track);
   } catch (e) {
     res.status(400).send(e);
   }
@@ -120,7 +121,8 @@ router.delete('/music/', async (req, res) => {
     if (!track) {
       return res.status(404).send();
     }
-    res.send(track);
+    await deleteTrack(req.query.trackTitle);
+    return res.send(track);
   } catch (e) {
     res.status(400).send(e);
   }
