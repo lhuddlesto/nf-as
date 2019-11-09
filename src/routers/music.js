@@ -50,6 +50,7 @@ router.post('/music/upload', upload.fields([{ name: 'track', maxCount: 1 }, { na
   const { genre, isPublic } = req.body;
   const trackTitle = req.body.trackTitle.replace(/ /g, '_').toLowerCase();
   const mood = req.body.mood.split(',');
+  const similarArtists = req.body.similarArtists.split(',');
   const price = Number(req.body.price) - 0.01;
   const bpm = Number(req.body.bpm);
 
@@ -63,6 +64,7 @@ router.post('/music/upload', upload.fields([{ name: 'track', maxCount: 1 }, { na
       genre,
       isPublic,
       mood,
+      similarArtists,
       price,
       bpm,
       trackUrl,
@@ -86,9 +88,9 @@ router.post('/music/upload', upload.fields([{ name: 'track', maxCount: 1 }, { na
 
 // Update a track
 router.patch('/music/', async (req, res) => {
-  const updates = Object.keys(req.body)
-  const allowedUpdates = ['mood', 'isPublic', 'price', 'trackTitle', 'genre', 'bpm'];
-  const isValidOperation = updates.every((update) => allowedUpdates.includes(update))
+  const updates = Object.keys(req.body);
+  const allowedUpdates = ['mood', 'isPublic', 'price', 'trackTitle', 'genre', 'bpm', 'similarArtists'];
+  const isValidOperation = updates.every((update) => allowedUpdates.includes(update));
 
   if (!isValidOperation) {
     return res.status(400).send({ error: 'Invalid updates' });
