@@ -19,7 +19,7 @@ const uploadTrack = (path, trackTitle) => {
     .then((data) => {
       trackUrl = data.Location;
       fs.unlinkSync(path);
-      return trackUrl;
+      return `http://d3g8t2jk5ak9zp.cloudfront.net/${data.Key}`;
     }).catch((e) => {
       throw e;
     });
@@ -29,7 +29,7 @@ const uploadCover = (path, trackTitle) => {
   const file = fs.readFileSync(path);
   const params = {
     Bucket: 'nf.music.test',
-    Key: `${trackTitle}/cover/cover_${trackTitle}.png`,
+    Key: `${trackTitle}/cover/cover_${trackTitle}.jpg`,
     Body: file,
     ContentType: 'image/jpeg',
   };
@@ -38,7 +38,7 @@ const uploadCover = (path, trackTitle) => {
   return s3Upload
     .then((data) => {
       fs.unlinkSync(path);
-      return data.Location;
+      return `http://d3g8t2jk5ak9zp.cloudfront.net/${data.Key}`;
     }).catch((e) => {
       throw e;
     });
