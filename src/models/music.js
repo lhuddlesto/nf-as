@@ -4,6 +4,10 @@ const musicSchema = new mongoose.Schema({
   trackTitle: {
     type: String,
     required: true,
+  },
+  presentationTitle: {
+    type: String,
+    required: true,
     unique: true,
   },
   genre: {
@@ -44,6 +48,10 @@ const musicSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  trackoutUrl: {
+    type: String,
+    required: true,
+  },
   imageUrl: {
     type: String,
     required: true,
@@ -53,13 +61,13 @@ const musicSchema = new mongoose.Schema({
 });
 
 musicSchema.index({
-  trackTitle: 'text',
+  presentationTitle: 'text',
   genre: 'text',
   mood: 'text',
   similarArtists: 'text',
 }, {
   weights: {
-    trackTitle: 10,
+    presentationTitle: 10,
     similarArtists: 8,
     mood: 7,
     genre: 6,

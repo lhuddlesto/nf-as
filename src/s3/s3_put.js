@@ -20,7 +20,8 @@ const uploadTrack = (path, trackTitle) => {
       trackUrl = data.Location;
       fs.unlinkSync(path);
       return `http://d3g8t2jk5ak9zp.cloudfront.net/${data.Key}`;
-    }).catch((e) => {
+    })
+    .catch((e) => {
       throw e;
     });
 };
@@ -39,12 +40,39 @@ const uploadCover = (path, trackTitle) => {
     .then((data) => {
       fs.unlinkSync(path);
       return `http://d3g8t2jk5ak9zp.cloudfront.net/${data.Key}`;
-    }).catch((e) => {
+    })
+    .catch((e) => {
       throw e;
     });
 };
 
+const uploadTrackout = (path, trackTitle) => {
+  const params = {
+    Bucket: 'nf.music.test',
+    Key: `${trackTitle}/trackouts/trackouts_${trackTitle}.zip`,
+    Body: fs.readFileSync(path),
+    ContentType: 'application/zip',
+  };
+
+  const s3Upload = s3.upload(params).promise();
+
+  return s3Upload
+    .then((data) => {
+      fs.unlinkSync(path);
+      return data.Location;
+    })
+    .catch((e) => {
+      throw e;
+    });
+};
+
+const multiPartUpload = (filePath) => {
+  const partSize = 1024 * 1024 * 5;
+  const fileBuffer = fs.readFileSync(filePath);
+};
+
 module.exports = {
   uploadTrack,
+  uploadTrackout,
   uploadCover,
 };

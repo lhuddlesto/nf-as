@@ -1,8 +1,7 @@
 const express = require('express');
 const multer = require('multer');
-const sharp = require('sharp');
 const Music = require('../models/music');
-const { uploadTrack, uploadCover } = require('../s3/s3_put');
+const { uploadTrack, uploadCover, uploadTrackout } = require('../s3/s3_put');
 const deleteTrack = require('../s3/s3_delete');
 
 const storage = multer.diskStorage({
@@ -46,8 +45,9 @@ router.get('/music/search', async (req, res) => {
 });
 
 // Upload a single master track with cover art
-router.post('/music/upload', upload.fields([{ name: 'track', maxCount: 1 }, { name: 'cover', maxCount: 1 }]), async (req, res) => {
+router.post('/music/upload', upload.fields([{ name: 'track', maxCount: 1 }, { name: 'cover', maxCount: 1 }, { name: 'trackout', maxCount: 1 }]), async (req, res) => {
   const { genre, isPublic } = req.body;
+  const presentationTitle = req.body.trackTitle;
   const trackTitle = req.body.trackTitle.replace(/ /g, '_').toLowerCase();
   const mood = req.body.mood.split(',');
   const similarArtists = req.body.similarArtists.split(',');
@@ -56,11 +56,15 @@ router.post('/music/upload', upload.fields([{ name: 'track', maxCount: 1 }, { na
 
   try {
     // eslint-disable-next-line dot-notation
+    const trackoutUrl = await uploadTrackout(req.files['trackout'][0].path, trackTitle);
+    // eslint-disable-next-line dot-notation
     const imageUrl = await uploadCover(req.files['cover'][0].path, trackTitle);
     // eslint-disable-next-line dot-notation
     const trackUrl = await uploadTrack(req.files['track'][0].path, trackTitle);
+    
     const music = new Music({
       trackTitle,
+      presentationTitle,
       genre,
       isPublic,
       mood,
@@ -69,16 +73,17 @@ router.post('/music/upload', upload.fields([{ name: 'track', maxCount: 1 }, { na
       bpm,
       trackUrl,
       imageUrl,
+      trackoutUrl,
     });
     await music.save();
-    await res.status(201).send({
+    console.log('success');
+    return res.status(201).send({
       status: 'success',
       message: 'Your track was uploaded successfully.',
     });
-    console.log('success');
   } catch (e) {
     console.log(e);
-    res.send({
+    return res.send({
       status: 'error',
       message: 'Sorry, we were unable to upload your track.',
       error: e,
@@ -111,7 +116,7 @@ router.patch('/music/', async (req, res) => {
 
     return res.send(track);
   } catch (e) {
-    res.status(400).send(e);
+    return res.status(400).send(e);
   }
 });
 
@@ -126,7 +131,7 @@ router.delete('/music/', async (req, res) => {
     await deleteTrack(req.query.trackTitle);
     return res.send(track);
   } catch (e) {
-    res.status(400).send(e);
+    return res.status(400).send(e);
   }
 });
 
