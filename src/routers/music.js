@@ -1,7 +1,11 @@
+const fs = require('fs');
+const async = require('async');
 const express = require('express');
 const multer = require('multer');
 const Music = require('../models/music');
-const { uploadTrack, uploadCover, uploadTrackout } = require('../s3/s3_put');
+const {
+  uploadTrack, uploadCover, uploadTrackout, uploadFile 
+} = require('../s3/s3_put');
 const deleteTrack = require('../s3/s3_delete');
 
 const storage = multer.diskStorage({
@@ -45,7 +49,7 @@ router.get('/music/search', async (req, res) => {
 });
 
 // Upload a single master track with cover art
-router.post('/music/upload', upload.fields([{ name: 'track', maxCount: 1 }, { name: 'cover', maxCount: 1 }, { name: 'trackout', maxCount: 1 }]), async (req, res) => {
+router.post('/music/upload', upload.fields([{ name: 'track', maxCount: 1 }, { name: 'cover', maxCount: 1 }, { name: 'trackout', maxCount: 1 }]), (req, res) => {
   const { genre, isPublic } = req.body;
   const presentationTitle = req.body.trackTitle;
   const trackTitle = req.body.trackTitle.replace(/ /g, '_').toLowerCase();
@@ -53,15 +57,40 @@ router.post('/music/upload', upload.fields([{ name: 'track', maxCount: 1 }, { na
   const similarArtists = req.body.similarArtists.split(',');
   const price = Number(req.body.price) - 0.01;
   const bpm = Number(req.body.bpm);
+  let trackoutUrl;
+  let trackUrl;
 
-  try {
-    // eslint-disable-next-line dot-notation
-    const trackoutUrl = await uploadTrackout(req.files['trackout'][0].path, trackTitle);
-    // eslint-disable-next-line dot-notation
+  async.series([
+    (cb) => {
+      uploadFile(req.files.trackout[0].path, trackTitle, (err, data) => {
+        if (err) return cb(err, null);
+        if (data) {
+          console.log('Upload complete');
+          cb(null, data.Location);
+        }
+      });
+    },
+    (cb) => {
+      uploadFile(req.files.track[0].path, trackTitle, async (err, data) => {
+        if (err) return cb(err, null);
+        if (data) {
+          console.log('Upload complete');
+          cb(null, `http://d3g8t2jk5ak9zp.cloudfront.net/${data.Key}`);
+        }
+      });
+    },
+  ], async (err, results) => {
+    if (err) {
+      console.log(err);
+      return res.send({
+        status: 'error',
+        message: 'Sorry, we were unable to upload your track.',
+        error: err,
+      });
+    }
+    trackoutUrl = results[0];
+    trackUrl = results[1];    
     const imageUrl = await uploadCover(req.files['cover'][0].path, trackTitle);
-    // eslint-disable-next-line dot-notation
-    const trackUrl = await uploadTrack(req.files['track'][0].path, trackTitle);
-    
     const music = new Music({
       trackTitle,
       presentationTitle,
@@ -77,18 +106,11 @@ router.post('/music/upload', upload.fields([{ name: 'track', maxCount: 1 }, { na
     });
     await music.save();
     console.log('success');
-    return res.status(201).send({
+    res.status(201).send({
       status: 'success',
       message: 'Your track was uploaded successfully.',
     });
-  } catch (e) {
-    console.log(e);
-    return res.send({
-      status: 'error',
-      message: 'Sorry, we were unable to upload your track.',
-      error: e,
-    });
-  }
+  });
 });
 
 // Update a track
