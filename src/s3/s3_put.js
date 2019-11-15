@@ -64,10 +64,10 @@ const uploadCover = async (path, trackTitle) => {
 //   }
 // };
 
-function uploadMultipart(filePath, trackTitle, uploadCb) {
+function uploadMultipart(filePath, trackTitle, fileType, extension, uploadCb) {
   const bucketName = 'nf-music-test';
 
-  s3.createMultipartUpload({ Bucket: bucketName, Key: `${trackTitle}/trackouts/trackouts_${trackTitle}.zip` }, (mpErr, multipart) => {
+  s3.createMultipartUpload({ Bucket: bucketName, Key: `${trackTitle}/${fileType}/${fileType}_${trackTitle}.${extension}` }, (mpErr, multipart) => {
     if (!mpErr) {
       // console.log("multipart created", multipart.UploadId);
       fs.readFile(filePath, (err, fileData) => {
@@ -85,7 +85,7 @@ function uploadMultipart(filePath, trackTitle, uploadCb) {
             s3.uploadPart({
               Body: fileData.slice(rangeStart, end),
               Bucket: bucketName,
-              Key: `${trackTitle}/trackouts/trackouts_${trackTitle}.zip`,
+              Key: `${trackTitle}/${fileType}/${fileType}_${trackTitle}.${extension}`,
               PartNumber: partNum,
               UploadId: multipart.UploadId,
             }, (err, mData) => {
@@ -98,7 +98,7 @@ function uploadMultipart(filePath, trackTitle, uploadCb) {
         }, (err, dataPacks) => {
           s3.completeMultipartUpload({
             Bucket: bucketName,
-            Key: `${trackTitle}/trackouts/trackouts_${trackTitle}.zip`,
+            Key: `${trackTitle}/${fileType}/${fileType}_${trackTitle}.${extension}`,
             MultipartUpload: {
               Parts: dataPacks,
             },
@@ -112,7 +112,7 @@ function uploadMultipart(filePath, trackTitle, uploadCb) {
   });
 }
 
-function uploadFile(filePath, trackTitle, uploadCb) {
+function uploadFile(filePath, trackTitle, fileType, extension, uploadCb) {
   const stats = fs.statSync(filePath);
   const fileSizeInBytes = stats.size;
   const bucketName = 'nf-music-test';
@@ -122,13 +122,13 @@ function uploadFile(filePath, trackTitle, uploadCb) {
       fs.readFile(filePath, (err, fileData) => {
         s3.putObject({
           Bucket: bucketName,
-          Key: `${trackTitle}/trackouts/trackouts_${trackTitle}.zip`,
+          Key: `${trackTitle}/${fileType}/${fileType}_${trackTitle}.${extension}`,
           Body: fileData,
         }, retryCb);
       });
     }, uploadCb);
   } else {
-    return uploadMultipart(filePath, trackTitle, uploadCb);
+    return uploadMultipart(filePath, trackTitle, fileType, extension, uploadCb);
   }
 }
 
