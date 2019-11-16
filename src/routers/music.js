@@ -62,20 +62,20 @@ router.post('/music/upload', upload.fields([{ name: 'track', maxCount: 1 }, { na
 
   async.series([
     (cb) => {
-      uploadFile(req.files.trackout[0].path, trackTitle, (err, data) => {
+      uploadFile(req.files.trackout[0].path, trackTitle, 'trackout', 'zip', (err, data) => {
         if (err) return cb(err, null);
         if (data) {
           console.log('Upload complete');
-          cb(null, data.Location);
+          return cb(null, data.Location);
         }
       });
     },
     (cb) => {
-      uploadFile(req.files.track[0].path, trackTitle, async (err, data) => {
+      uploadFile(req.files.track[0].path, trackTitle, 'master', 'wav', async (err, data) => {
         if (err) return cb(err, null);
         if (data) {
           console.log('Upload complete');
-          cb(null, `http://d3g8t2jk5ak9zp.cloudfront.net/${data.Key}`);
+          return cb(null, `http://d3g8t2jk5ak9zp.cloudfront.net/${data.Key}`);
         }
       });
     },
