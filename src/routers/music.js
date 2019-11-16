@@ -3,9 +3,7 @@ const async = require('async');
 const express = require('express');
 const multer = require('multer');
 const Music = require('../models/music');
-const {
-  uploadTrack, uploadCover, uploadTrackout, uploadFile 
-} = require('../s3/s3_put');
+const { uploadCover, uploadFile } = require('../s3/s3_post');
 const deleteTrack = require('../s3/s3_delete');
 
 const storage = multer.diskStorage({
@@ -127,7 +125,11 @@ router.patch('/music/', async (req, res) => {
     const track = await Music.findOne({ trackTitle: req.query.trackTitle });
 
     if (!track) {
-      return res.status(404).send();
+      return res.status(404).send({
+        status: 'error',
+        message: 'Sorry, we were unable to update your track.',
+        error: err,
+      });
     }
 
     updates.forEach((update) => {
@@ -136,7 +138,13 @@ router.patch('/music/', async (req, res) => {
 
     await track.save();
 
-    return res.send(track);
+    return res.send(
+      {
+        status: 'success',
+        message: 'Your track has been updated.',
+        track,
+      },
+    );
   } catch (e) {
     return res.status(400).send(e);
   }

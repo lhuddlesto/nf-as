@@ -6,29 +6,8 @@ const AWS = require('aws-sdk');
 
 const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
 
-// const uploadTrack = async (path, trackTitle) => {
-//   const file = fs.readFileSync(path);
-//   const params = {
-//     Bucket: 'nf-music-test',
-//     Key: `${trackTitle}/master/${trackTitle}.wav`,
-//     Body: file,
-//     ContentType: 'audio/wav',
-//   };
-
-//   const s3Upload = s3.upload(params).promise();
-
-//   // eslint-disable-next-line no-useless-catch
-//   try {
-//     const data = await s3Upload;
-//     console.log(`${trackTitle} master track uploaded.`);
-//     return `http://d3g8t2jk5ak9zp.cloudfront.net/${data.Key}`;
-//   } catch (e) {
-//     throw e;
-//   }
-// };
-
-const uploadCover = async (path, trackTitle) => {
-  const file = fs.readFileSync(path);
+const uploadCover = async (filePath, trackTitle) => {
+  const file = fs.readFileSync(filePath);
   const params = {
     Bucket: 'nf-music-test',
     Key: `${trackTitle}/cover/cover_${trackTitle}.jpg`,
@@ -40,29 +19,12 @@ const uploadCover = async (path, trackTitle) => {
   try {
     const data = await s3Upload;
     console.log(`${trackTitle} cover art uploaded.`);
+    fs.unlinkSync(filePath);
     return `http://d3g8t2jk5ak9zp.cloudfront.net/${data.Key}`;
   } catch (e) {
     throw e;
   }
 };
-
-// const uploadTrackout = async (path, trackTitle) => {
-//   const params = {
-//     Bucket: 'nf-music-test',
-//     Key: `${trackTitle}/trackouts/trackouts_${trackTitle}.zip`,
-//     Body: fs.readFileSync(path),
-//     ContentType: 'application/zip',
-//   };
-
-//   const s3Upload = s3.upload(params).promise();
-
-//   try {
-//     const data = await s3Upload();
-//     return data.Location;
-//   } catch (e) {
-//     throw e;
-//   }
-// };
 
 function uploadMultipart(filePath, trackTitle, uploadCb) {
   const bucketName = 'nf-music-test';
@@ -104,6 +66,7 @@ function uploadMultipart(filePath, trackTitle, uploadCb) {
             },
             UploadId: multipart.UploadId,
           }, uploadCb);
+          fs.unlinkSync(filePath);
         });
       });
     } else {
