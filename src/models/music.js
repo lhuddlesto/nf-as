@@ -50,7 +50,6 @@ const musicSchema = new mongoose.Schema({
   },
   trackoutUrl: {
     type: String,
-    required: true,
   },
   imageUrl: {
     type: String,

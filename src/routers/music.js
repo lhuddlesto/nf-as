@@ -1,9 +1,9 @@
 const fs = require('fs');
-const async = require('async');
 const express = require('express');
 const multer = require('multer');
 const Music = require('../models/music');
-const { uploadCover, uploadFile } = require('../s3/s3_post');
+const { uploadCover } = require('../s3/s3_post');
+const managedUpload = require('../s3/managed_upload/managedUpload');
 const deleteTrack = require('../s3/s3_delete');
 
 const storage = multer.diskStorage({
@@ -47,7 +47,8 @@ router.get('/music/search', async (req, res) => {
 });
 
 // Upload a single master track with cover art
-router.post('/music/upload', upload.fields([{ name: 'track', maxCount: 1 }, { name: 'cover', maxCount: 1 }, { name: 'trackout', maxCount: 1 }]), (req, res) => {
+router.post('/music/upload', upload.fields([{ name: 'track', maxCount: 1 }, { name: 'cover', maxCount: 1 }, { name: 'trackout', maxCount: 1 }]), async (req, res) => {
+  console.log('Upload started');
   const { genre, isPublic } = req.body;
   const presentationTitle = req.body.trackTitle;
   const trackTitle = req.body.trackTitle.replace(/ /g, '_').toLowerCase();
@@ -58,37 +59,10 @@ router.post('/music/upload', upload.fields([{ name: 'track', maxCount: 1 }, { na
   let trackoutUrl;
   let trackUrl;
 
-  async.series([
-    (cb) => {
-      uploadFile(req.files.trackout[0].path, trackTitle, 'trackout', 'zip', (err, data) => {
-        if (err) return cb(err, null);
-        if (data) {
-          console.log('Upload complete');
-          return cb(null, data.Location);
-        }
-      });
-    },
-    (cb) => {
-      uploadFile(req.files.track[0].path, trackTitle, 'master', 'wav', async (err, data) => {
-        if (err) return cb(err, null);
-        if (data) {
-          console.log('Upload complete');
-          return cb(null, `http://d3g8t2jk5ak9zp.cloudfront.net/${data.Key}`);
-        }
-      });
-    },
-  ], async (err, results) => {
-    if (err) {
-      console.log(err);
-      return res.send({
-        status: 'error',
-        message: 'Sorry, we were unable to upload your track.',
-        error: err,
-      });
-    }
-    trackoutUrl = results[0];
-    trackUrl = results[1];    
-    const imageUrl = await uploadCover(req.files['cover'][0].path, trackTitle);
+  try {
+    trackoutUrl = await managedUpload(req.files.trackout[0].path, trackTitle, 'trackout', 'application/zip', 'zip');
+    trackUrl = await managedUpload(req.files.track[0].path, trackTitle, 'master', 'audio/wav', 'wav');
+    const imageUrl = await uploadCover(req.files.cover[0].path, trackTitle);
     const music = new Music({
       trackTitle,
       presentationTitle,
@@ -104,17 +78,28 @@ router.post('/music/upload', upload.fields([{ name: 'track', maxCount: 1 }, { na
     });
     await music.save();
     console.log('success');
-    res.status(201).send({
+    fs.unlinkSync(req.files.trackout[0].path);
+    fs.unlinkSync(req.files.track[0].path);
+    fs.unlinkSync(req.files.cover[0].path);
+    return res.status(201).send({
       status: 'success',
       message: 'Your track was uploaded successfully.',
     });
-  });
+  } catch (e) {
+    console.log(e);
+    return res.send({
+      status: 'error',
+      message: 'Sorry, we were unable to upload your track.',
+      error: e,
+    });
+  }
 });
 
 // Update a track
 router.patch('/music/', async (req, res) => {
   const updates = Object.keys(req.body);
-  const allowedUpdates = ['mood', 'isPublic', 'price', 'trackTitle', 'genre', 'bpm', 'similarArtists'];
+  console.log(req.query.trackTitle);
+  const allowedUpdates = ['mood', 'isPublic', 'price', 'trackTitle', 'presentationTitle', 'genre', 'bpm', 'similarArtists'];
   const isValidOperation = updates.every((update) => allowedUpdates.includes(update));
 
   if (!isValidOperation) {
@@ -122,17 +107,24 @@ router.patch('/music/', async (req, res) => {
   }
 
   try {
-    const track = await Music.findOne({ trackTitle: req.query.trackTitle });
+    const track = await Music.findOne({ trackTitle: decodeURIComponent(req.query.trackTitle) });
 
     if (!track) {
+      console.log('not found');
       return res.status(404).send({
         status: 'error',
         message: 'Sorry, we were unable to update your track.',
-        error: err,
+        error: '',
       });
     }
 
     updates.forEach((update) => {
+      console.log(update);
+      if (update === 'trackTitle') {
+        track[update] = req.body[update].replace(/ /g, '_').toLowerCase();
+        track.presentationTitle = req.body[update];
+        return;
+      }
       track[update] = req.body[update];
     });
 
@@ -146,7 +138,11 @@ router.patch('/music/', async (req, res) => {
       },
     );
   } catch (e) {
-    return res.status(400).send(e);
+    return res.status(400).send({
+      status: 'error',
+      message: 'Sorry, we were unable to upload your track',
+      error: e,
+    });
   }
 });
 

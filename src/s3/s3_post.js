@@ -4,7 +4,7 @@ const fs = require('fs');
 const async = require('async');
 const AWS = require('aws-sdk');
 
-const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
+const s3 = new AWS.S3({ apiVersion: '2006-03-01', useAccelerateEndpoint: true });
 
 const uploadCover = async (filePath, trackTitle) => {
   const file = fs.readFileSync(filePath);
@@ -19,28 +19,28 @@ const uploadCover = async (filePath, trackTitle) => {
   try {
     const data = await s3Upload;
     console.log(`${trackTitle} cover art uploaded.`);
-    fs.unlinkSync(filePath);
     return `http://d3g8t2jk5ak9zp.cloudfront.net/${data.Key}`;
   } catch (e) {
     throw e;
   }
 };
 
-function uploadMultipart(filePath, trackTitle, uploadCb) {
+function uploadMultipart(filePath, trackTitle, fileType, extension, uploadCb) {
   const bucketName = 'nf-music-test';
 
   s3.createMultipartUpload({ Bucket: bucketName, Key: `${trackTitle}/${fileType}/${fileType}_${trackTitle}.${extension}` }, (mpErr, multipart) => {
     if (!mpErr) {
-      // console.log("multipart created", multipart.UploadId);
+      console.log('multipart created', multipart.UploadId);
       fs.readFile(filePath, (err, fileData) => {
-        const partSize = 1024 * 1024 * 5;
+        const partSize = 1024 * 1024 * 10;
         const parts = Math.ceil(fileData.length / partSize);
+        console.log(parts);
 
         async.times(parts, (partNum, next) => {
           const rangeStart = partNum * partSize;
           const end = Math.min(rangeStart + partSize, fileData.length);
 
-          console.log('uploading ', trackTitle, ' % ', (partNum / parts).toFixed(2));
+          console.log(`Uploading ${trackTitle} ${fileType}. ${(partNum / parts).toFixed(2) * 100}% complete.`);
 
           partNum++;
           async.retry((retryCb) => {
@@ -51,11 +51,11 @@ function uploadMultipart(filePath, trackTitle, uploadCb) {
               PartNumber: partNum,
               UploadId: multipart.UploadId,
             }, (err, mData) => {
-              retryCb(err, mData);
+              return Error('Fuck you');
             });
           }, (err, data) => {
-            // console.log(data);
-            next(err, { ETag: data.ETag, PartNumber: partNum });
+            console.log(data);
+            return next(err, { ETag: data.ETag, PartNumber: partNum });
           });
         }, (err, dataPacks) => {
           s3.completeMultipartUpload({
@@ -66,11 +66,10 @@ function uploadMultipart(filePath, trackTitle, uploadCb) {
             },
             UploadId: multipart.UploadId,
           }, uploadCb);
-          fs.unlinkSync(filePath);
         });
       });
     } else {
-      uploadCb(mpErr);
+      return uploadCb(mpErr);
     }
   });
 }
