@@ -17,13 +17,42 @@ const upload = multer({ storage });
 
 const router = new express.Router();
 
-// Grab all tracks
+// Returns all tracks
 router.get('/music', async (req, res) => {
   const music = await Music.find({});
   res.send(music);
 });
 
-// Search for a track, returns one result
+// Returns all unique "Mood" values
+router.get('/music/mood', async (req, res) => {
+  await Music.find().distinct('mood', (err, moods) => {
+    if (err) {
+      return res.status(404).send({
+        status: 'failure',
+        message: 'No values found for key "mood"',
+        error: err,
+      });
+    }
+    return res.status(201).send(moods);
+  });
+});
+
+// Returns all unique "Genre" values
+router.get('/music/genre', async (req, res) => {
+  await Music.find().distinct('genre', (err, genres) => {
+    if (err) {
+      return res.status(404).send({
+        status: 'failure',
+        message: 'No values found for key "genre"',
+        error: err,
+      });
+    }
+    return res.status(201).send(genres);
+  });
+});
+
+
+// Search for a track, returns matching results
 router.get('/music/search', async (req, res) => {
   if (!req.query) {
     res.status(404).send({
@@ -39,14 +68,15 @@ router.get('/music/search', async (req, res) => {
         $diacriticSensitive: false,
       },
     });
-    console.log(matchingTracks);
+    console.log(searchTerm, matchingTracks);
     res.status(201).send(matchingTracks);
   } catch (e) {
     res.status(500).send(e);
   }
 });
 
-// Upload a single master track with cover art
+// Uploads master track, zip of trackouts, and cover art to S3 and links to database.
+// Metadata goes into database.
 router.post('/music/upload', upload.fields([{ name: 'track', maxCount: 1 }, { name: 'cover', maxCount: 1 }, { name: 'trackout', maxCount: 1 }]), async (req, res) => {
   console.log('Upload started');
   const { genre, isPublic } = req.body;
@@ -56,11 +86,13 @@ router.post('/music/upload', upload.fields([{ name: 'track', maxCount: 1 }, { na
   const similarArtists = req.body.similarArtists.split(',');
   const price = Number(req.body.price) - 0.01;
   const bpm = Number(req.body.bpm);
-  let trackoutUrl;
+  let trackoutUrl = '';
   let trackUrl;
 
   try {
-    trackoutUrl = await managedUpload(req.files.trackout[0].path, trackTitle, 'trackout', 'application/zip', 'zip');
+    if (req.files.trackout) {
+      trackoutUrl = await managedUpload(req.files.trackout[0].path, trackTitle, 'trackout', 'application/zip', 'zip');
+    }
     trackUrl = await managedUpload(req.files.track[0].path, trackTitle, 'master', 'audio/wav', 'wav');
     const imageUrl = await uploadCover(req.files.cover[0].path, trackTitle);
     const music = new Music({
@@ -78,12 +110,15 @@ router.post('/music/upload', upload.fields([{ name: 'track', maxCount: 1 }, { na
     });
     await music.save();
     console.log('success');
-    fs.unlinkSync(req.files.trackout[0].path);
+    if (req.files.trackout) {
+      fs.unlinkSync(req.files.trackout[0].path);
+    }
     fs.unlinkSync(req.files.track[0].path);
     fs.unlinkSync(req.files.cover[0].path);
     return res.status(201).send({
       status: 'success',
       message: 'Your track was uploaded successfully.',
+      trackData: music,
     });
   } catch (e) {
     console.log(e);
@@ -91,15 +126,16 @@ router.post('/music/upload', upload.fields([{ name: 'track', maxCount: 1 }, { na
       status: 'error',
       message: 'Sorry, we were unable to upload your track.',
       error: e,
+      trackData: null,
     });
   }
 });
 
 // Update a track
-router.patch('/music/', async (req, res) => {
+router.patch('/music', async (req, res) => {
   const updates = Object.keys(req.body);
   console.log(req.query.trackTitle);
-  const allowedUpdates = ['mood', 'isPublic', 'price', 'trackTitle', 'presentationTitle', 'genre', 'bpm', 'similarArtists'];
+  const allowedUpdates = ['mood', 'isPublic', 'price', 'trackTitle', 'presentationTitle', 'genre', 'bpm', 'similarArtists', 'duration'];
   const isValidOperation = updates.every((update) => allowedUpdates.includes(update));
 
   if (!isValidOperation) {

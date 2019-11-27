@@ -18,6 +18,10 @@ const musicSchema = new mongoose.Schema({
     type: Array,
     required: true,
   },
+  duration: {
+    type: Number,
+    default: 0,
+  },
   similarArtists: {
     type: Array,
     required: true,
@@ -25,6 +29,10 @@ const musicSchema = new mongoose.Schema({
   isPublic: {
     type: String,
     default: false,
+  },
+  likeCount: {
+    type: Number,
+    default: 0,
   },
   price: {
     type: Number,
@@ -62,12 +70,12 @@ const musicSchema = new mongoose.Schema({
 musicSchema.index({
   presentationTitle: 'text',
   genre: 'text',
-  mood: 'text',
   similarArtists: 'text',
+  mood: 'text',
 }, {
   weights: {
     presentationTitle: 10,
-    similarArtists: 8,
+    similarArtists: 9,
     mood: 7,
     genre: 6,
   },
