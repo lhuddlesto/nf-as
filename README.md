@@ -4,7 +4,7 @@ NF-AS stands for **Nomad Fox Application Service**.  This application serves as 
 
 ## Installation
 
-**Server:** To get the app up and running, clone the repository, navigate to it in your terminal, and run `npm install`interac
+**Server:** To get the app up and running, clone the repository, navigate to it in your terminal, and run `npm install`
 
 **Database:** MongoDB is the database powering the application.  To set up MongoDB, try following [this guide](https://www.freecodecamp.org/news/learn-mongodb-a4ce205e7739/).
 
