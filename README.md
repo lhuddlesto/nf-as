@@ -8,6 +8,8 @@ NF-AS stands for **Nomad Fox Application Service**.  This application serves as 
 
 **Database:** MongoDB is the database powering the application.  To set up MongoDB, try following [this guide](https://www.freecodecamp.org/news/learn-mongodb-a4ce205e7739/).
 
+**Amazon S3** You will need Amazon S3 credentials set up for some GET and POST requests. [Start here](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html).
+
 ## Running The Application
 
 To run the application, run `npm start`.  Make sure your MongoDB instance is also running.
