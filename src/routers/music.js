@@ -58,21 +58,30 @@ router.get('/music/search', async (req, res) => {
     res.status(404).send({
       error: 'Track not found.',
     });
+  }  
+
+  if (req.query.term) {
+    try {
+      const searchTerm = req.query.term;
+      const matchingTracks = await Music.find({
+        $text: {
+          $search: searchTerm,
+          $caseSensitive: false,
+          $diacriticSensitive: false,
+        },
+      });
+      console.log(searchTerm, matchingTracks);
+      res.status(201).send(matchingTracks);
+    } catch (e) {
+      res.status(500).send(e);
+    }
   }
-  try {
-    const searchTerm = req.query.term;
-    const matchingTracks = await Music.find({
-      $text: {
-        $search: searchTerm,
-        $caseSensitive: false,
-        $diacriticSensitive: false,
-      },
-    });
-    console.log(searchTerm, matchingTracks);
-    res.status(201).send(matchingTracks);
-  } catch (e) {
-    res.status(500).send(e);
-  }
+
+  const matchingTracks = await Music.find({
+    genre: req.query.genre,
+  });
+
+  res.send(matchingTracks);
 });
 
 // Uploads master track, zip of trackouts, and cover art to S3 and links to database.
