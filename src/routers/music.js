@@ -54,32 +54,43 @@ router.get('/music/genre', async (req, res) => {
 
 // Search for a track, returns matching results
 router.get('/music/search', async (req, res) => {
+  let matchingTracks;
   if (!req.query) {
     res.status(404).send({
       error: 'Track not found.',
     });
-  }  
-
+  }
   if (req.query.term) {
     try {
       const searchTerm = req.query.term;
-      const matchingTracks = await Music.find({
+      matchingTracks = await Music.find({
         $text: {
           $search: searchTerm,
           $caseSensitive: false,
           $diacriticSensitive: false,
         },
       });
-      console.log(searchTerm, matchingTracks);
       res.status(201).send(matchingTracks);
     } catch (e) {
       res.status(500).send(e);
     }
   }
-
-  const matchingTracks = await Music.find({
-    genre: req.query.genre,
-  });
+  if (req.query.mood && !req.query.genre) {
+    matchingTracks = await Music.find({
+      mood: { $all: req.query.mood },
+    });
+  } else if (!req.query.mood && req.query.genre) {
+    matchingTracks = await Music.find({
+      genre: { $all: req.query.genre },
+    });
+  } else if (req.query.mood && req.query.genre) {
+    matchingTracks = await Music.find({
+      mood: { $all: req.query.mood },
+      genre: { $all: req.query.genre },
+    });
+  } else {
+    matchingTracks = await Music.find({});
+  }
 
   res.send(matchingTracks);
 });
