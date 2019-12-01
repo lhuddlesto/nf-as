@@ -75,24 +75,49 @@ router.get('/music/search', async (req, res) => {
       res.status(500).send(e);
     }
   }
-  if (req.query.mood && !req.query.genre) {
-    matchingTracks = await Music.find({
-      mood: { $all: req.query.mood },
-    });
-  } else if (!req.query.mood && req.query.genre) {
-    matchingTracks = await Music.find({
-      genre: { $all: req.query.genre },
-    });
-  } else if (req.query.mood && req.query.genre) {
-    matchingTracks = await Music.find({
-      mood: { $all: req.query.mood },
-      genre: { $all: req.query.genre },
-    });
-  } else {
-    matchingTracks = await Music.find({});
+  let genre;
+  genre = req.query.genre;
+  if (req.query.genre === 'all') {
+    genre = {};
   }
+  const priceLow = parseInt(req.query.price[0], 10);
+  const priceHigh = parseInt(req.query.price[1], 10);
 
-  res.send(matchingTracks);
+  const bpmLow = Number(req.query.bpm[0]);
+  const bpmHigh = Number(req.query.bpm[1]);
+
+  console.log(req.query);
+  try {
+    if (req.query.mood && !req.query.genre) {
+      matchingTracks = await Music.find({
+        mood: { $all: req.query.mood },
+        price: { $gte: priceLow, $lte: priceHigh },
+        bpm: { $gte: bpmLow, $lte: bpmHigh },
+      });
+    } else if (!req.query.mood && req.query.genre) {
+      matchingTracks = await Music.find({
+        genre: { $all: genre },
+        price: { $gte: priceLow, $lte: priceHigh },
+        bpm: { $gte: bpmLow, $lte: bpmHigh },
+      });
+    } else if (req.query.mood && req.query.genre) {
+      matchingTracks = await Music.find({
+
+        mood: { $all: req.query.mood },
+        genre: { $all: genre },
+        price: { $gte: priceLow, $lte: priceHigh },
+        bpm: { $gte: bpmLow, $lte: bpmHigh },
+      });
+    } else {
+      matchingTracks = await Music.find({
+        price: { $gte: priceLow, $lte: priceHigh },
+        bpm: { $gte: bpmLow, $lte: bpmHigh },
+      });
+    }
+    res.send(matchingTracks);
+  } catch (e) {
+    console.log(e);
+  }
 });
 
 // Uploads master track, zip of trackouts, and cover art to S3 and links to database.
