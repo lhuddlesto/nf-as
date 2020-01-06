@@ -19,8 +19,10 @@ const router = new express.Router();
 
 // Returns all tracks
 router.get('/music', async (req, res) => {
-  const music = await Music.find({});
-  res.send(music);
+  const music = await Music.find({}).limit(10);
+  music.items = await Music.estimatedDocumentCount();
+  console.log(music);
+  return res.send(music);
 });
 
 // Returns all unique "Mood" values
