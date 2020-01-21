@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+const Music = require('../models/music');
 
 const validateRegisterInput = require('../utils/validation/register');
 const validateLoginInput = require('../utils/validation/login');
@@ -115,5 +116,39 @@ router.get('/user', checkToken, async (req, res) => {
   }
 });
 
+// Lets user like a track.  The id of the track is added to "likes" array.
+router.patch('/user/music/like', checkToken, async (req, res) => {
+  try {
+    const { id, trackId } = req.query;
+    const user = await User.findById(id);
+    const track = await Music.findById(trackId);
+
+    if (!track) {
+      return res.status(404).send('Track not found');
+    }
+
+    if (!user) {
+      return res.status(404).send('User id not provided');
+    }
+
+    const { presentationTitle } = track;
+
+    if (user.likedTracks.includes(trackId)) {
+      res.status(500).send({
+        status: 'Failure',
+        message: `You've already liked ${presentationTitle}.`,
+      });
+    }
+    user.likedTracks.push(trackId);
+    await user.save();
+    return res.status(200).send({
+      status: 'Success',
+      message: `${presentationTitle} has been added to your likes.`,
+    });
+  } catch (e) {
+    console.log(e.message);
+    return res.status(500).send(e.message);
+  }
+});
 
 module.exports = router;

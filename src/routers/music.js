@@ -230,7 +230,7 @@ router.patch('/music', async (req, res) => {
 });
 
 // Delete a track
-router.delete('/music/', async (req, res) => {
+router.delete('/music', async (req, res) => {
   try {
     const track = await Music.findOneAndDelete({ trackTitle: req.query.trackTitle });
 
