@@ -17,4 +17,4 @@ coverage
 *.lcov
 
 # environment variables
-.env
+*.env
