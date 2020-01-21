@@ -1,6 +1,6 @@
 # NF-AS
 
-NF-AS stands for **Nomad Fox Application Service**.  This application serves as the back-end for the Nomad Fox website.  It interacts with an S3 bucket to grab and create data, as well as CRUD operations with a MongoDB database.
+NF-AS stands for **Nomad Fox Application Service**.  This application serves as the back-end for the Nomad Fox website.  It interacts with an S3 bucket to grab and create data, as well as CRUD operations with a MongoDB database.  Also authentication for users, with certain routes being protected via JWTs.
 
 ## Installation
 
