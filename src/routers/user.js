@@ -134,14 +134,16 @@ router.patch('/user/music/like', checkToken, async (req, res) => {
 
     const { presentationTitle } = track;
 
-    if (user.likedTracks.includes(trackId)) {
+    if (user.likedTracks.includes(trackId) && track.likedBy.includes(id)) {
       res.status(500).send({
         status: 'Failure',
         message: `You've already liked ${presentationTitle}.`,
       });
     }
     user.likedTracks.push(trackId);
+    track.likedBy.push(id);
     await user.save();
+    await track.save();
     return res.status(200).send({
       status: 'Success',
       message: `${presentationTitle} has been added to your likes.`,
@@ -170,13 +172,13 @@ router.delete('/user/music/like', checkToken, async (req, res) => {
 
     const { presentationTitle } = track;
 
-    if (!user.likedTracks.includes(trackId)) {
+    if (!user.likedTracks.includes(trackId) && !track.likedBy.includes(id)) {
       return res.status(500).send({
         status: 'Failure',
         message: `${presentationTitle} is not a track you've liked`,
       });
     }
-    const result = await User.findByIdAndUpdate(
+    const userResult = await User.findByIdAndUpdate(
       id,
       {
         $pull: {
@@ -184,12 +186,21 @@ router.delete('/user/music/like', checkToken, async (req, res) => {
         },
       },
     );
-    if (result) {
+    const trackResult = await Music.findByIdAndUpdate(
+      trackId,
+      {
+        $pull: {
+          likedBy: id,
+        },
+      },
+    );
+
+    if (userResult && trackResult) {
       return res.status(200).send(`${presentationTitle} has been removed from your likes.`);
     }
-    throw Error;
+    throw new Error('something went wrong');
   } catch (e) {
-    console.log(e.message);
+    console.log(e);
     return res.status(500).send(e.message);
   }
 });
