@@ -10,7 +10,7 @@ const validateLoginInput = require('../utils/validation/login');
 const router = new express.Router();
 
 const checkToken = (req, res, next) => {
-  const header = req.headers['authorization'];
+  const header = req.headers.authorization;
 
   if (typeof header !== 'undefined') {
     const bearer = header.split(' ');
@@ -117,6 +117,7 @@ router.get('/user', checkToken, async (req, res) => {
 });
 
 // Lets user like a track.  The id of the track is added to "likes" array.
+// Must be an authenticated user to like a track.
 router.patch('/user/music/like', checkToken, async (req, res) => {
   try {
     const { id, trackId } = req.query;
@@ -145,6 +146,48 @@ router.patch('/user/music/like', checkToken, async (req, res) => {
       status: 'Success',
       message: `${presentationTitle} has been added to your likes.`,
     });
+  } catch (e) {
+    console.log(e.message);
+    return res.status(500).send(e.message);
+  }
+});
+
+// Removes a track that a user has liked. The tracks id is removed from the likedTracks array.
+// Must be an authenticated user to remove a liked track.
+router.delete('/user/music/like', checkToken, async (req, res) => {
+  try {
+    const { id, trackId } = req.query;
+    const user = await User.findById(id);
+    const track = await Music.findById(trackId);
+
+    if (!track) {
+      return res.status(404).send('Track not found');
+    }
+
+    if (!user) {
+      return res.status(404).send('User id not provided');
+    }
+
+    const { presentationTitle } = track;
+
+    if (!user.likedTracks.includes(trackId)) {
+      return res.status(500).send({
+        status: 'Failure',
+        message: `${presentationTitle} is not a track you've liked`,
+      });
+    }
+    const result = await User.findByIdAndUpdate(
+      id,
+      {
+        $pull: {
+          likedTracks: trackId,
+        },
+      },
+    );
+    if (result) {
+      return res.status(200).send(`${presentationTitle} has been removed from your likes.`);
+    }
+    throw Error;
   } catch (e) {
     console.log(e.message);
     return res.status(500).send(e.message);
