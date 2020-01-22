@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start:dev": "env-cmd -f ./env/dev.env nodemon src/server.js",
     "start": "nodemon src/server.js",
     "test:lint": "./node_modules/.bin/eslint src/"
   },

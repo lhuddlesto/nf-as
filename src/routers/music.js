@@ -18,13 +18,28 @@ const upload = multer({ storage });
 const router = new express.Router();
 
 // Returns all tracks
-router.get('/music', async (req, res) => {
-  const music = await Music.find({}).limit(10);
-  music.items = await Music.estimatedDocumentCount();
-  console.log(music);
-  return res.send(music);
+router.get('/music', (req, res) => {
+  Music.find({}).limit(10).sort({ createdAt: -1 }).skip(0)
+    .exec((err, data) => {
+      if (err) {
+        return res.status(500).send(err);
+      }
+      return res.status(200).send(data);
+    });
 });
 
+// Returns amount of documents for pagination
+router.get('/music/count', async (req, res) => {
+  try {
+    const count = await Music.estimatedDocumentCount({});
+    return res.send({
+      count,
+    });
+  } catch (e) {
+    console.log(e.message);
+    return res.send(e.message);
+  }
+});
 // Returns all unique "Mood" values
 router.get('/music/mood', async (req, res) => {
   await Music.find().distinct('mood', (err, moods) => {
