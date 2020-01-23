@@ -19,9 +19,10 @@ const router = new express.Router();
 
 // Returns all tracks
 router.get('/music', (req, res) => {
-  Music.find({}).limit(10).sort({ createdAt: -1 }).skip(0)
+  Music.find({}).limit(10).sort({ createdAt: -1 }).skip(Number(req.query.skip))
     .exec((err, data) => {
       if (err) {
+        console.log(err);
         return res.status(500).send(err);
       }
       return res.status(200).send(data);
@@ -71,6 +72,11 @@ router.get('/music/genre', async (req, res) => {
 
 // Search for a track, returns matching results
 router.get('/music/search', async (req, res) => {
+  let { skip } = req.query;
+  let count;
+  if (!req.query.skip) {
+    skip = 0;
+  }
   let matchingTracks;
   if (!req.query) {
     res.status(404).send({
@@ -86,8 +92,13 @@ router.get('/music/search', async (req, res) => {
           $caseSensitive: false,
           $diacriticSensitive: false,
         },
-      });
-      res.status(201).send(matchingTracks);
+      }).limit(10).sort({ createdAt: -1 }).skip(Number(skip))
+        .exec((err, result) => {
+          if (err) {
+            return res.status(500).send(err);
+          }
+          return res.status(200).send(result);
+        });
     } catch (e) {
       res.status(500).send(e);
     }
@@ -103,33 +114,35 @@ router.get('/music/search', async (req, res) => {
   const bpmLow = Number(req.query.bpm[0]);
   const bpmHigh = Number(req.query.bpm[1]);
 
-  console.log(req.query);
   try {
     if (req.query.mood && !req.query.genre) {
       matchingTracks = await Music.find({
         mood: { $all: req.query.mood },
         price: { $gte: priceLow, $lte: priceHigh },
         bpm: { $gte: bpmLow, $lte: bpmHigh },
-      });
+      }).limit(10).sort({ createdAt: -1 }).skip(Number(skip))
+        .exec();
     } else if (!req.query.mood && req.query.genre) {
       matchingTracks = await Music.find({
         genre: { $all: genre },
         price: { $gte: priceLow, $lte: priceHigh },
         bpm: { $gte: bpmLow, $lte: bpmHigh },
-      });
+      }).limit(10).sort({ createdAt: -1 }).skip(Number(skip))
+        .exec();
     } else if (req.query.mood && req.query.genre) {
       matchingTracks = await Music.find({
-
         mood: { $all: req.query.mood },
         genre: { $all: genre },
         price: { $gte: priceLow, $lte: priceHigh },
         bpm: { $gte: bpmLow, $lte: bpmHigh },
-      });
+      }).limit(10).sort({ createdAt: -1 }).skip(Number(skip))
+        .exec();
     } else {
       matchingTracks = await Music.find({
         price: { $gte: priceLow, $lte: priceHigh },
         bpm: { $gte: bpmLow, $lte: bpmHigh },
-      });
+      }).limit(10).sort({ createdAt: -1 }).skip(Number(skip))
+        .exec();
     }
     res.send(matchingTracks);
   } catch (e) {
