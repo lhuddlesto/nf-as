@@ -74,6 +74,7 @@ router.get('/music/genre', async (req, res) => {
 router.get('/music/search', async (req, res) => {
   let { skip } = req.query;
   let count;
+  let query;
   if (!req.query.skip) {
     skip = 0;
   }
@@ -116,35 +117,37 @@ router.get('/music/search', async (req, res) => {
 
   try {
     if (req.query.mood && !req.query.genre) {
-      matchingTracks = await Music.find({
+      query = Music.find({
         mood: { $all: req.query.mood },
         price: { $gte: priceLow, $lte: priceHigh },
         bpm: { $gte: bpmLow, $lte: bpmHigh },
-      }).limit(10).sort({ createdAt: -1 }).skip(Number(skip))
-        .exec();
+      });
+      matchingTracks = await query.limit(10).sort({ createdAt: -1 }).skip(Number(skip)).exec();
     } else if (!req.query.mood && req.query.genre) {
-      matchingTracks = await Music.find({
+      query = Music.find({
         genre: { $all: genre },
         price: { $gte: priceLow, $lte: priceHigh },
         bpm: { $gte: bpmLow, $lte: bpmHigh },
-      }).limit(10).sort({ createdAt: -1 }).skip(Number(skip))
-        .exec();
+      });
+      matchingTracks = await query.limit(10).sort({ createdAt: -1 }).skip(Number(skip)).exec();
     } else if (req.query.mood && req.query.genre) {
-      matchingTracks = await Music.find({
+      query = Music.find({
         mood: { $all: req.query.mood },
         genre: { $all: genre },
         price: { $gte: priceLow, $lte: priceHigh },
         bpm: { $gte: bpmLow, $lte: bpmHigh },
-      }).limit(10).sort({ createdAt: -1 }).skip(Number(skip))
-        .exec();
+      });
+      matchingTracks = await query.limit(10).sort({ createdAt: -1 }).skip(Number(skip)).exec();
     } else {
       matchingTracks = await Music.find({
         price: { $gte: priceLow, $lte: priceHigh },
         bpm: { $gte: bpmLow, $lte: bpmHigh },
-      }).limit(10).sort({ createdAt: -1 }).skip(Number(skip))
-        .exec();
+      });
+      matchingTracks = await query.limit(10).sort({ createdAt: -1 }).skip(Number(skip)).exec();
     }
-    res.send(matchingTracks);
+    count = await query.countDocuments({}).exec();
+    console.log(count);
+    res.send([matchingTracks, count]);
   } catch (e) {
     console.log(e);
   }
