@@ -109,6 +109,7 @@ router.get('/user', checkToken, async (req, res) => {
       email,
       purchases,
       likedTracks,
+      id,
     });
   } catch (e) {
     console.log(e);
@@ -135,7 +136,7 @@ router.patch('/user/music/like', checkToken, async (req, res) => {
     const { presentationTitle } = track;
 
     if (user.likedTracks.includes(trackId) && track.likedBy.includes(id)) {
-      res.status(500).send({
+      return res.status(500).send({
         status: 'Failure',
         message: `You've already liked ${presentationTitle}.`,
       });
