@@ -24,7 +24,7 @@ const checkToken = (req, res, next) => {
 };
 
 
-router.post('/user/signup/local', async (req, res) => {
+router.post('/api/user/signup/local', async (req, res) => {
   const { errors, isValid } = validateRegisterInput(req.body.user.local);
 
   const { email, password, name } = req.body.user.local;
@@ -64,7 +64,7 @@ router.post('/user/signup/local', async (req, res) => {
   }
 });
 
-router.post('/user/login/local', async (req, res) => {
+router.post('/api/user/login/local', async (req, res) => {
   const { errors, isValid } = validateLoginInput(req.body.user.local);
   if (!isValid) {
     console.log(400, errors);
@@ -98,7 +98,7 @@ router.post('/user/login/local', async (req, res) => {
   }
 });
 
-router.get('/user', checkToken, async (req, res) => {
+router.get('/api/user', checkToken, async (req, res) => {
   try {
     const { id } = req.query;
     const user = await User.findById(id);
@@ -119,7 +119,7 @@ router.get('/user', checkToken, async (req, res) => {
 
 // Lets user like a track.  The id of the track is added to "likes" array.
 // Must be an authenticated user to like a track.
-router.patch('/user/music/like', checkToken, async (req, res) => {
+router.patch('/api/user/music/like', checkToken, async (req, res) => {
   try {
     const { id, trackId } = req.query;
     const user = await User.findById(id);
@@ -157,7 +157,7 @@ router.patch('/user/music/like', checkToken, async (req, res) => {
 
 // Removes a track that a user has liked. The tracks id is removed from the likedTracks array.
 // Must be an authenticated user to remove a liked track.
-router.delete('/user/music/like', checkToken, async (req, res) => {
+router.delete('/api/user/music/like', checkToken, async (req, res) => {
   try {
     const { id, trackId } = req.query;
     const user = await User.findById(id);

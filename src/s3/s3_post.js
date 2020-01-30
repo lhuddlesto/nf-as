@@ -19,7 +19,7 @@ const uploadCover = async (filePath, trackTitle) => {
   try {
     const data = await s3Upload;
     console.log(`${trackTitle} cover art uploaded.`);
-    return `http://d3g8t2jk5ak9zp.cloudfront.net/${data.Key}`;
+    return `${process.env.NOMAD_MUSIC_S3}/${data.Key}`;
   } catch (e) {
     throw e;
   }

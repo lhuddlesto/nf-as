@@ -22,8 +22,8 @@ const managedUpload = async (filePath, trackTitle, folder, ContentType, extensio
 
   try {
     const data = await s3Upload;
-    console.log(`${trackTitle} ${folder} upload complete.`)
-    return `http://d3g8t2jk5ak9zp.cloudfront.net/${data.Key}`;
+    console.log(`${trackTitle} ${folder} upload complete.`);
+    return `${process.env.NOMAD_MUSIC_URL}/${data.Key}`;
   } catch (e) {
     return e;
   }

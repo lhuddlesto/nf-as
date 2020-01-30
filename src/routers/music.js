@@ -18,7 +18,7 @@ const upload = multer({ storage });
 const router = new express.Router();
 
 // Returns all tracks
-router.get('/music', (req, res) => {
+router.get('/api/music', (req, res) => {
   Music.find({}).limit(10).sort({ createdAt: -1 }).skip(Number(req.query.skip))
     .exec((err, data) => {
       if (err) {
@@ -30,7 +30,7 @@ router.get('/music', (req, res) => {
 });
 
 // Returns amount of documents for pagination
-router.get('/music/count', async (req, res) => {
+router.get('/api/music/count', async (req, res) => {
   try {
     const count = await Music.estimatedDocumentCount({});
     return res.send({
@@ -42,7 +42,7 @@ router.get('/music/count', async (req, res) => {
   }
 });
 // Returns all unique "Mood" values
-router.get('/music/mood', async (req, res) => {
+router.get('/api/music/mood', async (req, res) => {
   await Music.find().distinct('mood', (err, moods) => {
     if (err) {
       return res.status(404).send({
@@ -56,7 +56,7 @@ router.get('/music/mood', async (req, res) => {
 });
 
 // Returns all unique "Genre" values
-router.get('/music/genre', async (req, res) => {
+router.get('/api/music/genre', async (req, res) => {
   await Music.find().distinct('genre', (err, genres) => {
     if (err) {
       return res.status(404).send({
@@ -71,7 +71,7 @@ router.get('/music/genre', async (req, res) => {
 
 
 // Search for a track, returns matching results
-router.get('/music/search', async (req, res) => {
+router.get('/api/music/search', async (req, res) => {
   let { skip } = req.query;
   let count;
   let query;
@@ -155,7 +155,7 @@ router.get('/music/search', async (req, res) => {
 
 // Uploads master track, zip of trackouts, and cover art to S3 and links to database.
 // Metadata goes into database.
-router.post('/music/upload', upload.fields([{ name: 'track', maxCount: 1 }, { name: 'cover', maxCount: 1 }, { name: 'trackout', maxCount: 1 }]), async (req, res) => {
+router.post('/api/music/upload', upload.fields([{ name: 'track', maxCount: 1 }, { name: 'cover', maxCount: 1 }, { name: 'trackout', maxCount: 1 }]), async (req, res) => {
   console.log('Upload started');
   const { genre, isPublic } = req.body;
   const presentationTitle = req.body.trackTitle;
@@ -210,7 +210,7 @@ router.post('/music/upload', upload.fields([{ name: 'track', maxCount: 1 }, { na
 });
 
 // Update a track
-router.patch('/music', async (req, res) => {
+router.patch('/api/music', async (req, res) => {
   const updates = Object.keys(req.body);
   console.log(req.query.trackTitle);
   const allowedUpdates = ['mood', 'isPublic', 'price', 'trackTitle', 'presentationTitle', 'genre', 'bpm', 'similarArtists', 'duration'];
@@ -261,7 +261,7 @@ router.patch('/music', async (req, res) => {
 });
 
 // Delete a track
-router.delete('/music', async (req, res) => {
+router.delete('/api/music', async (req, res) => {
   try {
     const track = await Music.findOneAndDelete({ trackTitle: req.query.trackTitle });
 
