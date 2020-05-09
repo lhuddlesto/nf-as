@@ -19,7 +19,8 @@ const router = new express.Router();
 
 // Returns all tracks
 router.get('/api/music', (req, res) => {
-  Music.find({}).limit(10).sort({ createdAt: -1 }).skip(Number(req.query.skip))
+  console.log(req.query);
+  Music.find({}).limit(Number(req.query.limit) || 10).sort({ createdAt: -1 }).skip(Number(req.query.skip || 0))
     .exec((err, data) => {
       if (err) {
         console.log(err);
