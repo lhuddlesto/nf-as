@@ -85,6 +85,17 @@ router.get('/api/music/search', async (req, res) => {
       error: 'Track not found.',
     });
   }
+
+  if (req.query.track) {
+    try {
+      matchingTracks = await Music.findOne({trackTitle: req.query.track});
+      console.log(matchingTracks);
+      return res.status(200).send(matchingTracks);
+    } catch (e) {
+      return res.status(500).send(e);
+    }
+  }
+
   if (req.query.term) {
     try {
       const searchTerm = req.query.term;
@@ -105,6 +116,7 @@ router.get('/api/music/search', async (req, res) => {
       res.status(500).send(e);
     }
   }
+
   let genre;
   genre = req.query.genre;
   if (req.query.genre === 'all') {
