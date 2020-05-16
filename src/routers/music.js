@@ -73,12 +73,9 @@ router.get('/api/music/genre', async (req, res) => {
 
 // Search for a track, returns matching results
 router.get('/api/music/search', async (req, res) => {
-  let { skip } = req.query;
+  let { skip } = req.query || 0;
   let count;
   let query;
-  if (!req.query.skip) {
-    skip = 0;
-  }
   let matchingTracks;
   if (!req.query) {
     res.status(404).send({
@@ -142,7 +139,8 @@ router.get('/api/music/search', async (req, res) => {
         price: { $gte: priceLow, $lte: priceHigh },
         bpm: { $gte: bpmLow, $lte: bpmHigh },
       });
-      matchingTracks = await query.limit(10).sort({ createdAt: -1 }).skip(Number(skip)).exec();
+      matchingTracks = await query.limit(10).sort({ createdAt: -1 }).exec();
+      console.log(matchingTracks);
     } else if (req.query.mood && req.query.genre) {
       query = Music.find({
         mood: { $all: req.query.mood },
@@ -159,10 +157,10 @@ router.get('/api/music/search', async (req, res) => {
       matchingTracks = await query.limit(10).sort({ createdAt: -1 }).skip(Number(skip)).exec();
     }
     count = await query.countDocuments({}).exec();
-    console.log(count);
     res.send([matchingTracks, count]);
   } catch (e) {
     console.log(e);
+    return e;
   }
 });
 
